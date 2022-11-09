@@ -34,7 +34,7 @@
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
-#include "streams.h"
+#include <streams.h>
 
 #include "crossbar.h"
 #include <strsafe.h>

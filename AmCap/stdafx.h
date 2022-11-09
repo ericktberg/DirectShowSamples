@@ -20,7 +20,7 @@
 
 
 #include <windows.h>
-#include "streams.h"
+#include <streams.h>
 #include <strsafe.h>
 
 #include "DShowUtil.h"
