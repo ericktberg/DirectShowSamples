@@ -130,7 +130,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\Common;..\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\src;..\Common;..\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -154,7 +154,7 @@
     </Midl>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
-      <AdditionalIncludeDirectories>..\Common;..\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\src;..\Common;..\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader />
@@ -174,21 +174,21 @@
     <ProjectReference />
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="amcap.cpp" />
-    <ClCompile Include="crossbar.cpp" />
-    <ClCompile Include="SampleCGB.cpp" />
-    <ClCompile Include="status.cpp" />
-    <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="src\gui\amcap.cpp" />
+    <ClCompile Include="src\capture\crossbar.cpp" />
+    <ClCompile Include="src\capture\SampleCGB.cpp" />
+    <ClCompile Include="src\gui\status.cpp" />
+    <ClCompile Include="src\stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="amcap.h" />
-    <ClInclude Include="crossbar.h" />
-    <ClInclude Include="SampleCGB.h" />
-    <ClInclude Include="status.h" />
-    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="src\gui\amcap.h" />
+    <ClInclude Include="src\capture\crossbar.h" />
+    <ClInclude Include="src\capture\SampleCGB.h" />
+    <ClInclude Include="src\gui\status.h" />
+    <ClInclude Include="src\stdafx.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="amcap.rc" />
+    <ResourceCompile Include="src\gui\amcap.rc" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BaseClasses\BaseClasses.vcxproj">

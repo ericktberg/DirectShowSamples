@@ -15,41 +15,41 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="amcap.cpp">
+    <ClCompile Include="src\gui\amcap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="crossbar.cpp">
+    <ClCompile Include="src\capture\crossbar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SampleCGB.cpp">
+    <ClCompile Include="src\capture\SampleCGB.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="status.cpp">
+    <ClCompile Include="src\gui\status.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stdafx.cpp">
+    <ClCompile Include="src\stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="amcap.h">
+    <ClInclude Include="src\gui\amcap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="crossbar.h">
+    <ClInclude Include="src\capture\crossbar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SampleCGB.h">
+    <ClInclude Include="src\capture\SampleCGB.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="status.h">
+    <ClInclude Include="src\gui\status.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="stdafx.h">
+    <ClInclude Include="src\stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="amcap.rc">
+    <ResourceCompile Include="src\gui\amcap.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>

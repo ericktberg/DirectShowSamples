@@ -18,8 +18,8 @@
 #include <strsafe.h>
 #include "amcap.h"
 #include "status.h"
-#include "crossbar.h"
-#include "SampleCGB.h"
+#include "capture\crossbar.h"
+#include "capture\SampleCGB.h"
 
 //------------------------------------------------------------------------------
 // Macros
