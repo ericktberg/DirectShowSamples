@@ -20,6 +20,7 @@
 #include "status.h"
 #include "capture\crossbar.h"
 #include "capture\SampleCGB.h"
+#include "resourceConstants.h"
 
 //------------------------------------------------------------------------------
 // Macros

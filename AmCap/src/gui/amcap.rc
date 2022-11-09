@@ -10,7 +10,7 @@
  **************************************************************************/
 
 #include <windows.h>
-#include "amcap.h"
+#include "resourceConstants.h"
 
 //
 // Icons
