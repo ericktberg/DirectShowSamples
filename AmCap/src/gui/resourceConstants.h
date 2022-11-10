@@ -60,7 +60,6 @@
 #define MENU_DIALOGF        57
 #define MENU_MPEG2          58  // !!! more?
 
-
 // Dialogs
 #define IDD_ABOUT               600
 #define IDD_AllocCapFileSpace   601

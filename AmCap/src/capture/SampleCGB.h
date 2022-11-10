@@ -6,9 +6,7 @@
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
 
-
 #include <ks.h>
-
 
 #ifndef KSCATEGORY_ENCODER
 #define STATIC_KSCATEGORY_ENCODER\
@@ -38,197 +36,186 @@ DEFINE_GUIDSTRUCT("36a5f770-fe4c-11ce-a8ed-00aa002feab5", CLSID_Dump);
 #define CLSID_Dump DEFINE_GUIDNAMED(CLSID_Dump)
 #endif
 
-
-
 class ISampleCaptureGraphBuilder
 {
 public:
 
 public:
-    ISampleCaptureGraphBuilder()
-    {
-        AudPID_ = 0xC0;
-        VidPID_ = 0xE0;
-        HRESULT hr = CoCreateInstance(CLSID_CaptureGraphBuilder2, NULL, CLSCTX_INPROC_SERVER, 
-			IID_ICaptureGraphBuilder2, (void**)&graphBuilder2_ ); 
-        ASSERT( S_OK == hr );
-    }
+	ISampleCaptureGraphBuilder()
+	{
+		AudPID_ = 0xC0;
+		VidPID_ = 0xE0;
+		HRESULT hr = CoCreateInstance(CLSID_CaptureGraphBuilder2, NULL, CLSCTX_INPROC_SERVER,
+			IID_ICaptureGraphBuilder2, (void**)&graphBuilder2_);
+		ASSERT(S_OK == hr);
+	}
 
-    //
-    //  OnFinalConstruct build the ICaptureGraphBuilder2
-    //
-    void ReleaseFilters( )
-    {
-        pMultiplexer_.Release();
-        pEncoder_.Release();
-        pMPEG2Demux_.Release();
-        pMediaControl_.Release();
-        pAudioPin_.Release();
-        pVideoPin_.Release();
-
-    }
+	//
+	//  OnFinalConstruct build the ICaptureGraphBuilder2
+	//
+	void ReleaseFilters()
+	{
+		pMultiplexer_.Release();
+		pEncoder_.Release();
+		pMPEG2Demux_.Release();
+		pMediaControl_.Release();
+		pAudioPin_.Release();
+		pVideoPin_.Release();
+	}
 
 public:
 
-    STDMETHOD(AllocCapFile)( LPCOLESTR lpwstr, DWORDLONG dwlSize );
+	STDMETHOD(AllocCapFile)(LPCOLESTR lpwstr, DWORDLONG dwlSize);
 
-    STDMETHOD(ControlStream)( const GUID *pCategory,
-                          const GUID *pType,
-                          IBaseFilter *pFilter,
-                          REFERENCE_TIME *pstart,
-                          REFERENCE_TIME *pstop,
-                          WORD wStartCookie,
-                          WORD wStopCookie
-                          );
+	STDMETHOD(ControlStream)(const GUID* pCategory,
+		const GUID* pType,
+		IBaseFilter* pFilter,
+		REFERENCE_TIME* pstart,
+		REFERENCE_TIME* pstop,
+		WORD wStartCookie,
+		WORD wStopCookie
+		);
 
-    STDMETHOD(CopyCaptureFile)(  LPOLESTR lpwstrOld,
-                              LPOLESTR lpwstrNew,
-                              int fAllowEscAbort,
-                              IAMCopyCaptureFileProgress *pCallback
-                              );
+	STDMETHOD(CopyCaptureFile)(LPOLESTR lpwstrOld,
+		LPOLESTR lpwstrNew,
+		int fAllowEscAbort,
+		IAMCopyCaptureFileProgress* pCallback
+		);
 
-    STDMETHOD(FindInterface)(const GUID *pCategory,
-                          const GUID *pType,
-                          IBaseFilter *pf,
-                          REFIID riid,
-                          void **ppint
-                          );
+	STDMETHOD(FindInterface)(const GUID* pCategory,
+		const GUID* pType,
+		IBaseFilter* pf,
+		REFIID riid,
+		void** ppint
+		);
 
-    STDMETHOD(FindPin)( IUnknown *pSource,
-                      PIN_DIRECTION pindir,
-                      const GUID *pCategory,
-                      const GUID *pType,
-                      BOOL fUnconnected,
-                      int num,
-                      IPin **ppPin
-                      );
+	STDMETHOD(FindPin)(IUnknown* pSource,
+		PIN_DIRECTION pindir,
+		const GUID* pCategory,
+		const GUID* pType,
+		BOOL fUnconnected,
+		int num,
+		IPin** ppPin
+		);
 
+	STDMETHOD(GetFiltergraph)(IGraphBuilder** ppfg);
 
-    STDMETHOD(GetFiltergraph)( IGraphBuilder **ppfg );
+	STDMETHOD(RenderStream)(const GUID* pCategory,
+		const GUID* pType,
+		IUnknown* pSource,
+		IBaseFilter* pIntermediate,
+		IBaseFilter* pSink
+		);
 
-    STDMETHOD(RenderStream)( const GUID *pCategory,
-                          const GUID *pType,
-                          IUnknown *pSource,
-                          IBaseFilter *pIntermediate,
-                          IBaseFilter *pSink
-                          );
+	STDMETHOD(SetFiltergraph)(IGraphBuilder* pfg);
 
-
-    STDMETHOD(SetFiltergraph)( IGraphBuilder *pfg );
-
-
-    STDMETHOD(SetOutputFileName)(
-                                const GUID *pType,
-                                LPCOLESTR lpwstrFile,
-                                IBaseFilter **ppf,
-                                IFileSinkFilter **pSink
-                                );
-
+	STDMETHOD(SetOutputFileName)(
+		const GUID* pType,
+		LPCOLESTR lpwstrFile,
+		IBaseFilter** ppf,
+		IFileSinkFilter** pSink
+		);
 
 protected:
 
-    HRESULT CreateVideoPin( IMpeg2Demultiplexer *pIMpeg2Demux );
-    HRESULT CreateAudioPin( IMpeg2Demultiplexer *pIMpeg2Demux );
+	HRESULT CreateVideoPin(IMpeg2Demultiplexer* pIMpeg2Demux);
+	HRESULT CreateAudioPin(IMpeg2Demultiplexer* pIMpeg2Demux);
 
+	HRESULT ConfigureMPEG2Demux(IBaseFilter* pFilter);
 
-    HRESULT ConfigureMPEG2Demux( IBaseFilter *pFilter);
+	HRESULT FindMPEG2Pin(IBaseFilter* pFilter, IPin** ppPin);
+	HRESULT FindPin(
+		IBaseFilter* pFilter,
+		const REGPINMEDIUM& regPinMedium,
+		PIN_DIRECTION direction,
+		BOOL video,
+		IPin** ppPin);
 
-    HRESULT FindMPEG2Pin( IBaseFilter *pFilter, IPin** ppPin );
-    HRESULT FindPin( 
-                IBaseFilter *pFilter, 
-                const REGPINMEDIUM& regPinMedium, 
-                PIN_DIRECTION direction, 
-                BOOL video,             
-                IPin **ppPin);
+	HRESULT GetMedium(IPin* pPin, REGPINMEDIUM& regPinMedium);
+	HRESULT AddMPEG2Demux();
 
-    HRESULT GetMedium( IPin *pPin, REGPINMEDIUM& regPinMedium );
-    HRESULT AddMPEG2Demux( );
+	HRESULT FindEncoder(IEnumMoniker* pEncoders, REGPINMEDIUM pinMedium,
+		IBaseFilter** ppEncoder);
 
-    HRESULT FindEncoder( IEnumMoniker *pEncoders, REGPINMEDIUM pinMedium, 
-                         IBaseFilter **ppEncoder );
+	BOOL IsMPEG2Pin(IPin* pPin);
+	BOOL IsVideoPin(IPin* pPin);
+	BOOL IsAudioPin(IPin* pPin);
 
-    BOOL IsMPEG2Pin( IPin *pPin );
-    BOOL IsVideoPin( IPin *pPin );
-    BOOL IsAudioPin( IPin *pPin );
-    
-    BOOL HasMediaType( IPin *pPin, REFGUID majorType );
+	BOOL HasMediaType(IPin* pPin, REFGUID majorType);
 
-    HRESULT FindAudioPin( IBaseFilter *pFilter, IPin **ppPin  );
-    HRESULT FindVideoPin( IBaseFilter *pFilter, IPin **ppPin  );
+	HRESULT FindAudioPin(IBaseFilter* pFilter, IPin** ppPin);
+	HRESULT FindVideoPin(IBaseFilter* pFilter, IPin** ppPin);
 
-    //
-    //  tries to build MPEG2 segment for pFilter capture filter
-    //
-    HRESULT BuildMPEG2Segment( IBaseFilter *pFilter );
-    //
-    //  renders pPin to a MPEG2 demux
-    //
-    HRESULT RenderToMPEG2Demux( IPin *pPin );
-    //
-    //  renders pin pPin with pinMedium to an encoder
-    //
-    HRESULT RenderToMPEG2Demux( IPin *pPin, const REGPINMEDIUM& pinMedium,  
-                                IEnumMoniker *pEncoders );
-    //
-    //  renders pPin to a MPEG2 demux; there is no special medium, the encoder will be 
-    //  serched in the encoder category
-    //
-    HRESULT RenderToMPEG2Demux( IPin *pPin, IEnumMoniker *pEncoders  );
-    //
-    //  renders the encoder to a MPEG2 demux
-    //
-    HRESULT ConnectEncoderToMPEG2Demux( IBaseFilter *pEncoder, 
-                                        const REGPINMEDIUM& pinMedium );
-    //
-    //  renders the demux to a MPEG2 demux
-    //
-    HRESULT ConnectMultiplexerToMPEG2Demux( IBaseFilter *pEncoder, 
-                                            IEnumMoniker *pMultiplexers );
-    //
-    //  helper methods; connects a pin to a filter and a filter to another one
-    //
-    HRESULT ConnectPin( IPin *pPin, IBaseFilter *pFilter );
-    HRESULT ConnectFilters(IBaseFilter *pUpFilter, 
-                           IBaseFilter *pDownFilter);
+	//
+	//  tries to build MPEG2 segment for pFilter capture filter
+	//
+	HRESULT BuildMPEG2Segment(IBaseFilter* pFilter);
+	//
+	//  renders pPin to a MPEG2 demux
+	//
+	HRESULT RenderToMPEG2Demux(IPin* pPin);
+	//
+	//  renders pin pPin with pinMedium to an encoder
+	//
+	HRESULT RenderToMPEG2Demux(IPin* pPin, const REGPINMEDIUM& pinMedium,
+		IEnumMoniker* pEncoders);
+	//
+	//  renders pPin to a MPEG2 demux; there is no special medium, the encoder will be
+	//  serched in the encoder category
+	//
+	HRESULT RenderToMPEG2Demux(IPin* pPin, IEnumMoniker* pEncoders);
+	//
+	//  renders the encoder to a MPEG2 demux
+	//
+	HRESULT ConnectEncoderToMPEG2Demux(IBaseFilter* pEncoder,
+		const REGPINMEDIUM& pinMedium);
+	//
+	//  renders the demux to a MPEG2 demux
+	//
+	HRESULT ConnectMultiplexerToMPEG2Demux(IBaseFilter* pEncoder,
+		IEnumMoniker* pMultiplexers);
+	//
+	//  helper methods; connects a pin to a filter and a filter to another one
+	//
+	HRESULT ConnectPin(IPin* pPin, IBaseFilter* pFilter);
+	HRESULT ConnectFilters(IBaseFilter* pUpFilter,
+		IBaseFilter* pDownFilter);
 
-    //
-    //  for audio pin; the multiplexer has already beem chosen
-    //  if there is no encoder, the method fails
-    //
-    HRESULT ConnectAudioPinToMultiplexer(IPin *pPin, 
-                                         IBaseFilter *pMultiplexer);
+	//
+	//  for audio pin; the multiplexer has already beem chosen
+	//  if there is no encoder, the method fails
+	//
+	HRESULT ConnectAudioPinToMultiplexer(IPin* pPin,
+		IBaseFilter* pMultiplexer);
 
+	//
+	//  helper methods - get the encoders using SystemDeviceEnum or IFilterMapper2
+	//
+	HRESULT GetEncodersByCategory(IEnumMoniker** ppEncoders);
+	HRESULT GetEncodersByEnumerating(IPin* pPin, const REGPINMEDIUM& pinMedium,
+		IEnumMoniker** ppEncoders);
 
-    //
-    //  helper methods - get the encoders using SystemDeviceEnum or IFilterMapper2
-    //
-    HRESULT GetEncodersByCategory( IEnumMoniker **ppEncoders );
-    HRESULT GetEncodersByEnumerating( IPin *pPin, const REGPINMEDIUM& pinMedium, 
-                                      IEnumMoniker **ppEncoders );
+	//
+	//  helper methods - get the multiplexers using SystemDeviceEnum or IFilterMapper2
+	//
+	HRESULT GetMultiplexersByCategory(IEnumMoniker** ppMultiplexers);
+	HRESULT GetMultiplexersByFilterMapper(IEnumMoniker** ppMultiplexers,
+		const REGPINMEDIUM& pinMedium);
 
-    //
-    //  helper methods - get the multiplexers using SystemDeviceEnum or IFilterMapper2
-    //
-    HRESULT GetMultiplexersByCategory( IEnumMoniker **ppMultiplexers);
-    HRESULT GetMultiplexersByFilterMapper( IEnumMoniker **ppMultiplexers, 
-                                           const REGPINMEDIUM& pinMedium );
-
-    
-    SmartPtr<IBaseFilter> pMultiplexer_;
-    SmartPtr<IBaseFilter> pEncoder_;
-    SmartPtr<IBaseFilter> pMPEG2Demux_;
+	SmartPtr<IBaseFilter> pMultiplexer_;
+	SmartPtr<IBaseFilter> pEncoder_;
+	SmartPtr<IBaseFilter> pMPEG2Demux_;
 
 protected:
 
-    SmartPtr<ICaptureGraphBuilder2> graphBuilder2_;
-    SmartPtr<IGraphBuilder> graph_;
-    SmartPtr<IMediaControl> pMediaControl_;
+	SmartPtr<ICaptureGraphBuilder2> graphBuilder2_;
+	SmartPtr<IGraphBuilder> graph_;
+	SmartPtr<IMediaControl> pMediaControl_;
 
-    ULONG   VidPID_, 
-            AudPID_;
+	ULONG   VidPID_,
+		AudPID_;
 
 private:
-    SmartPtr<IPin>   pAudioPin_;
-    SmartPtr<IPin>   pVideoPin_;
-
+	SmartPtr<IPin>   pAudioPin_;
+	SmartPtr<IPin>   pVideoPin_;
 };

@@ -18,14 +18,12 @@
 #define _ATL_APARTMENT_THREADED
 #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
 
-
 #include <windows.h>
 #include <streams.h>
 #include <strsafe.h>
 
 #include "DShowUtil.h"
 #include "smartptr.h"   // smart pointer class
-
 
 //{{AFX_INSERT_LOCATION}}
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
