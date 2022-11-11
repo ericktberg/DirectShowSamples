@@ -8,14 +8,16 @@
 //------------------------------------------------------------------------------
 
 #include "stdafx.h"
+
+#include <commdlg.h>
 #include <dbt.h>
-#include <mmreg.h>
-#include <msacm.h>
 #include <fcntl.h>
 #include <io.h>
+#include <mmreg.h>
+#include <msacm.h>
 #include <stdio.h>
-#include <commdlg.h>
 #include <strsafe.h>
+
 #include "amcap.h"
 #include "status.h"
 #include "capture\crossbar.h"

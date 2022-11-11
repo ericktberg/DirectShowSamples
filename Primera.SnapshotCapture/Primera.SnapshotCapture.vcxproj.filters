@@ -27,9 +27,24 @@
     <ClInclude Include="Primera.SnapshotCapture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\CaptureDeviceCollection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\VideoCaptureDevice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MaybeMessage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Primera.SnapshotCapture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CaptureDeviceCollection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\VideoCaptureDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
