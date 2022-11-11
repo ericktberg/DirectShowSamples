@@ -40,6 +40,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return FALSE;
     }
 
+    FILE* cons;
+    AllocConsole();
+    freopen_s(&cons, "CON", "w", stdout);
+
     MaybeMessage<VideoDeviceCollection> videoDeviceResult = acquireVideoDevices();
     if (videoDeviceResult.isError()) {
         std::cout << videoDeviceResult.getErrorMessage() << std::endl;
@@ -63,6 +67,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
     }
 
+    fclose(cons);
     return (int) msg.wParam;
 }
 
