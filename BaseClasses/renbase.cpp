@@ -1435,13 +1435,13 @@ void CBaseRenderer::SetRepaintStatus(BOOL bRepaint)
 
 void CBaseRenderer::SendNotifyWindow(IPin *pPin,HWND hwnd)
 {
-    IMediaEventSink *pSink;
+    IMediaEventSink *fileSinkFilterInterface;
 
     // Does the pin support IMediaEventSink
-    HRESULT hr = pPin->QueryInterface(IID_IMediaEventSink,(void **)&pSink);
+    HRESULT hr = pPin->QueryInterface(IID_IMediaEventSink,(void **)&fileSinkFilterInterface);
     if (SUCCEEDED(hr)) {
-        pSink->Notify(EC_NOTIFY_WINDOW,LONG_PTR(hwnd),0);
-        pSink->Release();
+        fileSinkFilterInterface->Notify(EC_NOTIFY_WINDOW,LONG_PTR(hwnd),0);
+        fileSinkFilterInterface->Release();
     }
     NotifyEvent(EC_NOTIFY_WINDOW,LONG_PTR(hwnd),0);
 }

@@ -213,12 +213,12 @@ ISampleCaptureGraphBuilder::RenderStream(const GUID* pCategory,
 	const GUID* pType,
 	IUnknown* pSource,
 	IBaseFilter* pIntermediate,
-	IBaseFilter* pSink)
+	IBaseFilter* fileSinkFilterInterface)
 {
 	if (!pType || !::IsEqualGUID(MEDIATYPE_Stream, *pType))
 	{
 		return graphBuilder2_->RenderStream(pCategory, pType, pSource,
-			pIntermediate, pSink);
+			pIntermediate, fileSinkFilterInterface);
 	}
 
 	HRESULT hr;
@@ -243,7 +243,7 @@ ISampleCaptureGraphBuilder::RenderStream(const GUID* pCategory,
 	}
 
 	hr = BuildMPEG2Segment(captureFilter);
-	if (pSink || FAILED(hr))
+	if (fileSinkFilterInterface || FAILED(hr))
 	{
 		return hr;
 	}
@@ -279,16 +279,16 @@ HRESULT
 ISampleCaptureGraphBuilder::SetOutputFileName(const GUID* pType,
 	LPCOLESTR lpwstrFile,
 	IBaseFilter** ppf,
-	IFileSinkFilter** pSink)
+	IFileSinkFilter** fileSinkFilterInterface)
 {
-	if (!pType || !lpwstrFile || !ppf || !pSink)
+	if (!pType || !lpwstrFile || !ppf || !fileSinkFilterInterface)
 	{
 		return E_INVALIDARG;
 	}
 
 	if (!::IsEqualGUID(*pType, MEDIASUBTYPE_Mpeg2))
 	{
-		return graphBuilder2_->SetOutputFileName(pType, lpwstrFile, ppf, pSink);
+		return graphBuilder2_->SetOutputFileName(pType, lpwstrFile, ppf, fileSinkFilterInterface);
 	}
 
 	HRESULT hr;
@@ -330,7 +330,7 @@ ISampleCaptureGraphBuilder::SetOutputFileName(const GUID* pType,
 		return hr;
 	}
 
-	*pSink = pDump;
+	*fileSinkFilterInterface = pDump;
 	return S_OK;
 }
 

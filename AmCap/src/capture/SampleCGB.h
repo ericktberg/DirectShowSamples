@@ -104,7 +104,7 @@ public:
 		const GUID* pType,
 		IUnknown* pSource,
 		IBaseFilter* pIntermediate,
-		IBaseFilter* pSink
+		IBaseFilter* fileSinkFilterInterface
 		);
 
 	STDMETHOD(SetFiltergraph)(IGraphBuilder* pfg);
@@ -113,7 +113,7 @@ public:
 		const GUID* pType,
 		LPCOLESTR lpwstrFile,
 		IBaseFilter** ppf,
-		IFileSinkFilter** pSink
+		IFileSinkFilter** fileSinkFilterInterface
 		);
 
 protected:

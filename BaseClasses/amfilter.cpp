@@ -814,13 +814,13 @@ CBaseFilter::NotifyEvent(
     LONG_PTR EventParam2)
 {
     // Snapshot so we don't have to lock up
-    IMediaEventSink *pSink = m_pSink;
-    if (pSink) {
+    IMediaEventSink *fileSinkFilterInterface = m_pSink;
+    if (fileSinkFilterInterface) {
         if (EC_COMPLETE == EventCode) {
             EventParam2 = (LONG_PTR)(IBaseFilter*)this;
         }
 
-        return pSink->Notify(EventCode, EventParam1, EventParam2);
+        return fileSinkFilterInterface->Notify(EventCode, EventParam1, EventParam2);
     } else {
         return E_NOTIMPL;
     }

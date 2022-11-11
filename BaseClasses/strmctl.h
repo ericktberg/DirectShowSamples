@@ -108,8 +108,8 @@ public:
     // The filter should call this in its JoinFilterGraph after it creates the
     // IMediaEventSink
     //
-    void SetFilterGraph( IMediaEventSink *pSink ) {
-        m_pSink = pSink;
+    void SetFilterGraph( IMediaEventSink *fileSinkFilterInterface ) {
+        m_pSink = fileSinkFilterInterface;
     }
 
     // Since we schedule in stream time, we need the tStart and must track the
