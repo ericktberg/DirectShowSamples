@@ -25,7 +25,7 @@ private:
 
 /*
 * IMPLEMENTATION
-* 
+*
 * Something about how the linker works, I have to include the entire template type definition in one file (?)
 * https://stackoverflow.com/questions/12848876/unresolved-external-symbol-template-class
 *
@@ -58,7 +58,7 @@ inline std::string MaybeMessage<T>::getErrorMessage()
 
 /*
 *  FACTORY METHODS
-* 
+*
 *  We need to include 2 parameters into the constructor of any maybe type.
 *  Let's simplify calling code by making all permutations of our type into simpler methods.
 */
@@ -68,8 +68,7 @@ MaybeMessage<T> maybeFail(std::string errorMessage) {
     return MaybeMessage<T>(nullptr, errorMessage);
 }
 
-
 template<typename T>
-MaybeMessage<T> maybeSucceed(T* result) {
+MaybeMessage<T> maybeSuccess(T* result) {
     return MaybeMessage<T>(result, "");
 }

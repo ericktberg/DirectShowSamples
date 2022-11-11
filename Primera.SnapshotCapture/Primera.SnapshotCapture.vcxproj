@@ -131,7 +131,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="src\MaybeMessage.h" />
-    <ClInclude Include="src\CaptureDeviceCollection.h" />
+    <ClInclude Include="src\VideoDeviceCollection.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Primera.SnapshotCapture.h" />
     <ClInclude Include="Resource.h" />
@@ -139,7 +139,7 @@
     <ClInclude Include="src\VideoCaptureDevice.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\CaptureDeviceCollection.cpp" />
+    <ClCompile Include="src\VideoDeviceCollection.cpp" />
     <ClCompile Include="Primera.SnapshotCapture.cpp" />
     <ClCompile Include="src\VideoCaptureDevice.cpp" />
   </ItemGroup>
