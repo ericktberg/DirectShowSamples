@@ -11,10 +11,13 @@ class VideoCaptureDevice
 public:
     VideoCaptureDevice(IMoniker* deviceMoniker);
     ~VideoCaptureDevice();
+
+    std::wstring getFriendlyName();
     IMoniker* getSourceMoniker();
     IBaseFilter* bindBaseFilter();
 
 private:
     IMoniker* _sourceMoniker;
     IBaseFilter* _cachedFilter = NULL;
+    std::wstring _cachedFriendlyName = L"";
 };

@@ -12,15 +12,15 @@ template <typename T>
 class MaybeMessage
 {
 public:
-    MaybeMessage(T* result, std::string errorMessage);
+    MaybeMessage(T* result, std::wstring errorMessage);
 
     T* getResult();
     bool isError();
-    std::string getErrorMessage();
+    std::wstring getErrorMessage();
 
 private:
     T* _result;
-    std::string _errorMessage;
+    std::wstring _errorMessage;
 };
 
 /*
@@ -32,7 +32,7 @@ private:
 */
 
 template<typename T>
-MaybeMessage<T>::MaybeMessage(T* result, std::string errorMessage)
+MaybeMessage<T>::MaybeMessage(T* result, std::wstring errorMessage)
 {
     _result = result;
     _errorMessage = errorMessage;
@@ -51,7 +51,7 @@ bool MaybeMessage<T>::isError()
 }
 
 template<typename T>
-inline std::string MaybeMessage<T>::getErrorMessage()
+inline std::wstring MaybeMessage<T>::getErrorMessage()
 {
     return _errorMessage;
 }
@@ -64,11 +64,11 @@ inline std::string MaybeMessage<T>::getErrorMessage()
 */
 
 template<typename T>
-MaybeMessage<T> maybeFail(std::string errorMessage) {
+MaybeMessage<T> maybeFail(std::wstring errorMessage) {
     return MaybeMessage<T>(nullptr, errorMessage);
 }
 
 template<typename T>
 MaybeMessage<T> maybeSuccess(T* result) {
-    return MaybeMessage<T>(result, "");
+    return MaybeMessage<T>(result, L"");
 }

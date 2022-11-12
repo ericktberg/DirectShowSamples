@@ -5,6 +5,7 @@
 #include "Primera.SnapshotCapture.h"
 #include <VideoDeviceCollection.h>
 #include <iostream>
+#include "CaptureGraphBuilder.h"
 
 #define MAX_LOADSTRING 100
 
@@ -18,6 +19,63 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+
+/*
+*   MY CUSTOM GRAPH LOGIC GOES HERE
+*   I DON'T KNOW HOW TO GET THIS OUTSIDE OF THE INITIALIZATION LOGIC YET
+*/
+
+VideoDeviceCollection* devices = nullptr;
+CaptureGraphBuilder* captureBuilder = nullptr;
+
+void SetupCaptureGraph() {
+    MaybeMessage<VideoDeviceCollection> videoDeviceResult = acquireVideoDevices();
+    if (videoDeviceResult.isError()) {
+        std::wcout << videoDeviceResult.getErrorMessage() << std::endl;
+        return;
+    }
+
+    devices = videoDeviceResult.getResult();
+
+    // For debug purposes show the devices that we enumerated
+    for (int i = 0; i < devices->length(); i++) {
+        VideoCaptureDevice* nextDevice = devices->getDeviceAt(i);
+        std::wstring friendlyName = nextDevice->getFriendlyName();
+        std::wcout << "Device " << i << ": " << friendlyName << std::endl;
+    }
+
+    if (devices->length() <= 0) {
+        std::wcout << "No devices were found. Exiting." << std::endl;
+        return;
+    }
+
+    VideoCaptureDevice* device = devices->getDeviceAt(0);
+    IBaseFilter* videoCaptureFilter = device->bindBaseFilter();
+    if (videoCaptureFilter == nullptr) {
+        std::wcout << "Could not bind to base filter. Exiting." << std::endl;
+        return;
+    }
+
+    captureBuilder = createCaptureBuilder();
+    if (captureBuilder == nullptr) {
+        std::wcout << "Could not create graph builder. Exiting." << std::endl;
+        return;
+    }
+
+    if (!captureBuilder->EstablishPreview(videoCaptureFilter)) {
+        return;
+    }
+    
+
+    if (!captureBuilder->Run()) {
+        return;
+    }
+
+}
+
+/*
+*   CUSTOM GRAPH LOGIC END
+*/
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                       _In_opt_ HINSTANCE hPrevInstance,
@@ -44,17 +102,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     AllocConsole();
     freopen_s(&cons, "CON", "w", stdout);
 
-    MaybeMessage<VideoDeviceCollection> videoDeviceResult = acquireVideoDevices();
-    if (videoDeviceResult.isError()) {
-        std::cout << videoDeviceResult.getErrorMessage() << std::endl;
-    }
-    else {
-        VideoDeviceCollection* devices = videoDeviceResult.getResult();
-        delete devices;
-    }
+    SetupCaptureGraph();
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_PRIMERASNAPSHOTCAPTURE));
-
     MSG msg;
 
     // Main message loop:
@@ -67,7 +117,18 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
     }
 
-    fclose(cons);
+    if (cons) {
+        fclose(cons);
+    }
+
+    if (devices) {
+        delete devices;
+    }
+
+    if (captureBuilder) {
+        delete captureBuilder;
+    }
+
     return (int) msg.wParam;
 }
 

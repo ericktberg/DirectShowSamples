@@ -9,7 +9,7 @@ public:
     VideoDeviceCollection(VideoCaptureDevice** devices, int length);
     ~VideoDeviceCollection();
 
-    VideoCaptureDevice** allDevices();
+    VideoCaptureDevice* getDeviceAt(int index);
     int length();
 
 private:

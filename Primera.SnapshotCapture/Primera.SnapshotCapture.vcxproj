@@ -130,6 +130,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CaptureGraphBuilder.h" />
+    <ClInclude Include="src\FilterGraphBuilder.h" />
+    <ClInclude Include="src\InteropStrings.h" />
     <ClInclude Include="src\MaybeMessage.h" />
     <ClInclude Include="src\VideoDeviceCollection.h" />
     <ClInclude Include="framework.h" />
@@ -139,6 +142,8 @@
     <ClInclude Include="src\VideoCaptureDevice.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CaptureGraphBuilder.cpp" />
+    <ClCompile Include="src\FilterGraphBuilder.cpp" />
     <ClCompile Include="src\VideoDeviceCollection.cpp" />
     <ClCompile Include="Primera.SnapshotCapture.cpp" />
     <ClCompile Include="src\VideoCaptureDevice.cpp" />
