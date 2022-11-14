@@ -42,7 +42,7 @@
     <ClInclude Include="src\FilterGraphBuilder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CaptureGraphBuilder.h">
+    <ClInclude Include="src\CaptureGraphBuilder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -59,7 +59,7 @@
     <ClCompile Include="src\FilterGraphBuilder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CaptureGraphBuilder.cpp">
+    <ClCompile Include="src\CaptureGraphBuilder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

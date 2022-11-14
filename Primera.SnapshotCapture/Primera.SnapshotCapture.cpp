@@ -50,6 +50,7 @@ void SetupCaptureGraph() {
     }
 
     VideoCaptureDevice* device = devices->getDeviceAt(0);
+    // The Graph Builder will take care of releasing our video capture filter when we release it.
     IBaseFilter* videoCaptureFilter = device->bindBaseFilter();
     if (videoCaptureFilter == nullptr) {
         std::wcout << "Could not bind to base filter. Exiting." << std::endl;
@@ -65,12 +66,22 @@ void SetupCaptureGraph() {
     if (!captureBuilder->EstablishPreview(videoCaptureFilter)) {
         return;
     }
-    
 
     if (!captureBuilder->Run()) {
         return;
     }
+}
 
+void CleanupCaptureGraph() {
+    if (devices) {
+        delete devices;
+        devices = nullptr;
+    }
+
+    if (captureBuilder) {
+        delete captureBuilder;
+        captureBuilder = nullptr;
+    }
 }
 
 /*
@@ -117,17 +128,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
     }
 
+    CleanupCaptureGraph();
+
     if (cons) {
         fclose(cons);
     }
 
-    if (devices) {
-        delete devices;
-    }
-
-    if (captureBuilder) {
-        delete captureBuilder;
-    }
 
     return (int) msg.wParam;
 }
