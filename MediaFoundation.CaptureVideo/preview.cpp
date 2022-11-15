@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////
 //
 // preview.cpp: Manages video preview.
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -23,8 +23,8 @@
 HRESULT CPreview::CreateInstance(
     HWND hVideo,        // Handle to the video window.
     HWND hEvent,        // Handle to the window to receive notifications.
-    CPreview **ppPlayer // Receives a pointer to the CPreview object.
-    )
+    CPreview** ppPlayer // Receives a pointer to the CPreview object.
+)
 {
     assert(hVideo != NULL);
     assert(hEvent != NULL);
@@ -34,7 +34,7 @@ HRESULT CPreview::CreateInstance(
         return E_POINTER;
     }
 
-    CPreview *pPlayer = new (std::nothrow) CPreview(hVideo, hEvent);
+    CPreview* pPlayer = new (std::nothrow) CPreview(hVideo, hEvent);
 
     // The CPlayer constructor sets the ref count to 1.
 
@@ -55,12 +55,11 @@ HRESULT CPreview::CreateInstance(
     return hr;
 }
 
-
 //-------------------------------------------------------------------
 //  constructor
 //-------------------------------------------------------------------
 
-CPreview::CPreview(HWND hVideo, HWND hEvent) : 
+CPreview::CPreview(HWND hVideo, HWND hEvent) :
     m_pReader(NULL),
     m_hwndVideo(hVideo),
     m_hwndEvent(hEvent),
@@ -84,7 +83,6 @@ CPreview::~CPreview()
     DeleteCriticalSection(&m_critsec);
 }
 
-
 //-------------------------------------------------------------------
 //  Initialize
 //
@@ -99,7 +97,6 @@ HRESULT CPreview::Initialize()
 
     return hr;
 }
-
 
 //-------------------------------------------------------------------
 //  CloseDevice
@@ -121,7 +118,6 @@ HRESULT CPreview::CloseDevice()
     return S_OK;
 }
 
-
 /////////////// IUnknown methods ///////////////
 
 //-------------------------------------------------------------------
@@ -132,7 +128,6 @@ ULONG CPreview::AddRef()
 {
     return InterlockedIncrement(&m_nRefCount);
 }
-
 
 //-------------------------------------------------------------------
 //  Release
@@ -149,22 +144,19 @@ ULONG CPreview::Release()
     return uCount;
 }
 
-
-
 //-------------------------------------------------------------------
 //  QueryInterface
 //-------------------------------------------------------------------
 
 HRESULT CPreview::QueryInterface(REFIID riid, void** ppv)
 {
-    static const QITAB qit[] = 
+    static const QITAB qit[] =
     {
         QITABENT(CPreview, IMFSourceReaderCallback),
         { 0 },
     };
     return QISearch(this, qit, riid, ppv);
 }
-
 
 /////////////// IMFSourceReaderCallback methods ///////////////
 
@@ -174,16 +166,25 @@ HRESULT CPreview::QueryInterface(REFIID riid, void** ppv)
 // Called when the IMFMediaSource::ReadSample method completes.
 //-------------------------------------------------------------------
 
+
+int readFrame = 10;
+int framesRead = 0;
+
 HRESULT CPreview::OnReadSample(
     HRESULT hrStatus,
-    DWORD /* dwStreamIndex */,
-    DWORD /* dwStreamFlags */,
-    LONGLONG /* llTimestamp */,
-    IMFSample *pSample      // Can be NULL
-    )
+    DWORD  dwStreamIndex,
+    DWORD dwStreamFlags,
+    LONGLONG llTimestamp,
+    IMFSample* pSample      // Can be NULL
+)
 {
+    UNREFERENCED_PARAMETER(dwStreamIndex);
+    UNREFERENCED_PARAMETER(dwStreamFlags);
+    UNREFERENCED_PARAMETER(llTimestamp);
+
     HRESULT hr = S_OK;
-    IMFMediaBuffer *pBuffer = NULL;
+    IMFMediaBuffer* pBuffer = NULL;
+    
 
     EnterCriticalSection(&m_critsec);
 
@@ -200,6 +201,10 @@ HRESULT CPreview::OnReadSample(
 
             hr = pSample->GetBufferByIndex(0, &pBuffer);
 
+            if (framesRead++ == readFrame) {
+                
+            }
+
             // Draw the frame.
 
             if (SUCCEEDED(hr))
@@ -209,17 +214,19 @@ HRESULT CPreview::OnReadSample(
         }
     }
 
+    DWORD streamIndex = (DWORD) MF_SOURCE_READER_FIRST_VIDEO_STREAM;
+
     // Request the next frame.
     if (SUCCEEDED(hr))
     {
         hr = m_pReader->ReadSample(
-            (DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM,
+            streamIndex,
             0,
             NULL,   // actual
             NULL,   // flags
             NULL,   // timestamp
             NULL    // sample
-            );
+        );
     }
 
     if (FAILED(hr))
@@ -232,14 +239,13 @@ HRESULT CPreview::OnReadSample(
     return hr;
 }
 
-
 //-------------------------------------------------------------------
 // TryMediaType
 //
 // Test a proposed video format.
 //-------------------------------------------------------------------
 
-HRESULT CPreview::TryMediaType(IMFMediaType *pType)
+HRESULT CPreview::TryMediaType(IMFMediaType* pType, DWORD streamIndex)
 {
     HRESULT hr = S_OK;
 
@@ -248,9 +254,9 @@ HRESULT CPreview::TryMediaType(IMFMediaType *pType)
 
     hr = pType->GetGUID(MF_MT_SUBTYPE, &subtype);
 
-    if (FAILED(hr)) 
-    { 
-        return hr;    
+    if (FAILED(hr))
+    {
+        return hr;
     }
 
     // Do we support this type directly?
@@ -263,22 +269,22 @@ HRESULT CPreview::TryMediaType(IMFMediaType *pType)
         // Can we decode this media type to one of our supported
         // output formats?
 
-        for (DWORD i = 0;  ; i++)
+        for (DWORD i = 0; ; i++)
         {
             // Get the i'th format.
             hr = m_draw.GetFormat(i, &subtype);
             if (FAILED(hr)) { break; }
 
             hr = pType->SetGUID(MF_MT_SUBTYPE, subtype);
-            
+
             if (FAILED(hr)) { break; }
 
             // Try to set this type on the source reader.
             hr = m_pReader->SetCurrentMediaType(
-                (DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM,
+                streamIndex,
                 NULL,
                 pType
-                );
+            );
 
             if (SUCCEEDED(hr))
             {
@@ -296,47 +302,59 @@ HRESULT CPreview::TryMediaType(IMFMediaType *pType)
     return hr;
 }
 
-
-
 //-------------------------------------------------------------------
 // SetDevice
 //
-// Set up preview for a specified video capture device. 
+// Set up preview for a specified video capture device.
 //-------------------------------------------------------------------
 
-HRESULT CPreview::SetDevice(IMFActivate *pActivate)
+#define CHECK_HR(x) if (FAILED(x)) { goto done; }
+
+HRESULT CPreview::SetDevice(IMFActivate* pActivate)
 {
     HRESULT hr = S_OK;
 
-    IMFMediaSource  *pSource = NULL;
-    IMFAttributes   *pAttributes = NULL;
-    IMFMediaType    *pType = NULL;
+    IMFMediaSource* mediaSource = NULL;
+    IMFAttributes* pAttributes = NULL;
+    IMFMediaType* pType = NULL;
 
     EnterCriticalSection(&m_critsec);
 
     // Release the current device, if any.
-
-    hr = CloseDevice();
+    CHECK_HR(hr = CloseDevice());
 
     // Create the media source for the device.
-    if (SUCCEEDED(hr))
-    {
-        hr = pActivate->ActivateObject(
-            __uuidof(IMFMediaSource), 
-            (void**)&pSource
-            );
-    }
+    CHECK_HR(hr = pActivate->ActivateObject(__uuidof(IMFMediaSource), (void**) &mediaSource));
 
     // Get the symbolic link.
-    if (SUCCEEDED(hr))
-    {
-        hr = pActivate->GetAllocatedString(
-            MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK,
-            &m_pwszSymbolicLink,
-            &m_cchSymbolicLink
-            );
-    }
+    CHECK_HR(hr = pActivate->GetAllocatedString(
+        MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK,
+        &m_pwszSymbolicLink,
+        &m_cchSymbolicLink
+    ));
 
+    IMFPresentationDescriptor* descriptor;
+    CHECK_HR(hr = mediaSource->CreatePresentationDescriptor(&descriptor));
+
+    DWORD descriptorCount;
+    CHECK_HR(hr = descriptor->GetStreamDescriptorCount(&descriptorCount));
+
+    for (DWORD i = 0; i < descriptorCount; i++) {
+        BOOL isDescriptorSelected;
+        IMFStreamDescriptor* streamDescriptor;
+        hr = descriptor->GetStreamDescriptorByIndex(i, &isDescriptorSelected, &streamDescriptor);
+
+        if (FAILED(hr)) {
+            goto done;
+        }
+        else {
+            DWORD streamId;
+
+            streamDescriptor->GetStreamIdentifier(&streamId);
+
+            SafeRelease(&streamDescriptor);
+        }
+    }
 
     //
     // Create the source reader.
@@ -344,32 +362,22 @@ HRESULT CPreview::SetDevice(IMFActivate *pActivate)
 
     // Create an attribute store to hold initialization settings.
 
-    if (SUCCEEDED(hr))
-    {
-        hr = MFCreateAttributes(&pAttributes, 2);
-    }
-    if (SUCCEEDED(hr))
-    {
-        hr = pAttributes->SetUINT32(MF_READWRITE_DISABLE_CONVERTERS, TRUE);
-    }
+    CHECK_HR(hr = MFCreateAttributes(&pAttributes, 2));
+    CHECK_HR(hr = pAttributes->SetUINT32(MF_READWRITE_DISABLE_CONVERTERS, TRUE));
 
     // Set the callback pointer.
-    if (SUCCEEDED(hr))
-    {
-        hr = pAttributes->SetUnknown(
-            MF_SOURCE_READER_ASYNC_CALLBACK,
-            this
-            );
-    }
+    CHECK_HR(hr = pAttributes->SetUnknown(
+        MF_SOURCE_READER_ASYNC_CALLBACK,
+        this
+    ));
 
-    if (SUCCEEDED(hr))
-    {
-        hr = MFCreateSourceReaderFromMediaSource(
-            pSource,
-            pAttributes,
-            &m_pReader
-            );
-    }
+    CHECK_HR(hr = MFCreateSourceReaderFromMediaSource(
+        mediaSource,
+        pAttributes,
+        &m_pReader
+    ));
+
+    DWORD streamIndex = (DWORD) MF_SOURCE_READER_FIRST_VIDEO_STREAM;
 
     // Try to find a suitable output type.
     if (SUCCEEDED(hr))
@@ -377,14 +385,14 @@ HRESULT CPreview::SetDevice(IMFActivate *pActivate)
         for (DWORD i = 0; ; i++)
         {
             hr = m_pReader->GetNativeMediaType(
-                (DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM,
+                streamIndex,
                 i,
                 &pType
-                );
+            );
 
             if (FAILED(hr)) { break; }
 
-            hr = TryMediaType(pType);
+            hr = TryMediaType(pType, streamIndex);
 
             SafeRelease(&pType);
 
@@ -400,20 +408,21 @@ HRESULT CPreview::SetDevice(IMFActivate *pActivate)
     {
         // Ask for the first sample.
         hr = m_pReader->ReadSample(
-            (DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM,
+            streamIndex,
             0,
             NULL,
             NULL,
             NULL,
             NULL
-            );
+        );
     }
 
+done:
     if (FAILED(hr))
     {
-        if (pSource)
+        if (mediaSource)
         {
-            pSource->Shutdown();
+            mediaSource->Shutdown();
 
             // NOTE: The source reader shuts down the media source
             // by default, but we might not have gotten that far.
@@ -421,15 +430,14 @@ HRESULT CPreview::SetDevice(IMFActivate *pActivate)
         CloseDevice();
     }
 
-    SafeRelease(&pSource);
+    SafeRelease(&mediaSource);
+    SafeRelease(&descriptor);
     SafeRelease(&pAttributes);
     SafeRelease(&pType);
 
     LeaveCriticalSection(&m_critsec);
     return hr;
 }
-
-
 
 //-------------------------------------------------------------------
 //  ResizeVideo
@@ -457,19 +465,18 @@ HRESULT CPreview::ResizeVideo(WORD /*width*/, WORD /*height*/)
     return hr;
 }
 
-
 //-------------------------------------------------------------------
 //  CheckDeviceLost
 //  Checks whether the current device has been lost.
 //
 //  The application should call this method in response to a
-//  WM_DEVICECHANGE message. (The application must register for 
+//  WM_DEVICECHANGE message. (The application must register for
 //  device notification to receive this message.)
 //-------------------------------------------------------------------
 
-HRESULT CPreview::CheckDeviceLost(DEV_BROADCAST_HDR *pHdr, BOOL *pbDeviceLost)
+HRESULT CPreview::CheckDeviceLost(DEV_BROADCAST_HDR* pHdr, BOOL* pbDeviceLost)
 {
-    DEV_BROADCAST_DEVICEINTERFACE *pDi = NULL;
+    DEV_BROADCAST_DEVICEINTERFACE* pDi = NULL;
 
     if (pbDeviceLost == NULL)
     {
@@ -477,7 +484,7 @@ HRESULT CPreview::CheckDeviceLost(DEV_BROADCAST_HDR *pHdr, BOOL *pbDeviceLost)
     }
 
     *pbDeviceLost = FALSE;
-    
+
     if (pHdr == NULL)
     {
         return S_OK;
@@ -488,8 +495,7 @@ HRESULT CPreview::CheckDeviceLost(DEV_BROADCAST_HDR *pHdr, BOOL *pbDeviceLost)
         return S_OK;
     }
 
-    pDi = (DEV_BROADCAST_DEVICEINTERFACE*)pHdr;
-
+    pDi = (DEV_BROADCAST_DEVICEINTERFACE*) pHdr;
 
     EnterCriticalSection(&m_critsec);
 
@@ -505,4 +511,3 @@ HRESULT CPreview::CheckDeviceLost(DEV_BROADCAST_HDR *pHdr, BOOL *pbDeviceLost)
 
     return S_OK;
 }
-

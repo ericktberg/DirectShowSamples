@@ -63,7 +63,7 @@ protected:
 
     HRESULT Initialize();
     void    NotifyError(HRESULT hr) { PostMessage(m_hwndEvent, WM_APP_PREVIEW_ERROR, (WPARAM)hr, 0L); }
-    HRESULT TryMediaType(IMFMediaType *pType);
+    HRESULT TryMediaType(IMFMediaType *pType, DWORD streamIndex);
 
     long                    m_nRefCount;        // Reference count.
     CRITICAL_SECTION        m_critsec;

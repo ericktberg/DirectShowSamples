@@ -182,9 +182,12 @@
   <ItemGroup>
     <ClInclude Include="BufferLock.h" />
     <ClInclude Include="device.h" />
+    <ClInclude Include="ImageEncoding.h" />
     <ClInclude Include="MFCaptureD3D.h" />
     <ClInclude Include="preview.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="SampleGrabberCB.cpp" />
+    <ClInclude Include="SampleGrabberCB.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MFCaptureD3D.rc" />

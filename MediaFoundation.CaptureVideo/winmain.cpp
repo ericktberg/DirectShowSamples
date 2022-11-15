@@ -13,6 +13,7 @@
 
 #include "MFCaptureD3D.h"
 #include "resource.h"
+#include "ImageEncoding.h"
 
 // Include the v6 common controls in the manifest
 #pragma comment(linker, \
@@ -136,6 +137,8 @@ BOOL InitializeApplication()
 
     hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
+    EncodeImage();
+    
     if (SUCCEEDED(hr))
     {
         hr = MFStartup(MF_VERSION);
