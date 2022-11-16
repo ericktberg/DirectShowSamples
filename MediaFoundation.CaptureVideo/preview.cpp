@@ -60,7 +60,7 @@ HRESULT CPreview::CreateInstance(
 //-------------------------------------------------------------------
 
 CPreview::CPreview(HWND hVideo, HWND hEvent) :
-    m_pReader(NULL),
+    sourceReader(NULL),
     m_hwndVideo(hVideo),
     m_hwndEvent(hEvent),
     m_nRefCount(1),
@@ -108,7 +108,7 @@ HRESULT CPreview::CloseDevice()
 {
     EnterCriticalSection(&m_critsec);
 
-    SafeRelease(&m_pReader);
+    SafeRelease(&sourceReader);
 
     CoTaskMemFree(m_pwszSymbolicLink);
     m_pwszSymbolicLink = NULL;
@@ -169,7 +169,7 @@ HRESULT CPreview::QueryInterface(REFIID riid, void** ppv)
 int readFrame = 10;
 int framesRead = 0;
 
-HRESULT writeMediaBufferToFile(IMFMediaBuffer* mediaBuffer) {
+HRESULT WriteMediaBufferToFile(IMFMediaBuffer* mediaBuffer) {
     // We can only write the media buffer (at least for now) if it supports the 2d buffer interface
     HRESULT hr;
 
@@ -195,6 +195,7 @@ HRESULT writeMediaBufferToFile(IMFMediaBuffer* mediaBuffer) {
         return hr;
     }
 
+    buffer2d->Release();
     hr = buffer2d->Unlock2D();
     return hr;
 }
@@ -230,12 +231,12 @@ HRESULT CPreview::OnReadSample(
             hr = pSample->GetBufferByIndex(0, &pBuffer);
             if (SUCCEEDED(hr))
             {
-                if (framesRead++ == readFrame) {
-                    hr = writeMediaBufferToFile(pBuffer);
-                }
-                else {
+                //if (framesRead++ == readFrame) {
+                    // hr = WriteMediaBufferToFile(pBuffer);
+                //}
+                //else {
                     hr = m_draw.DrawFrame(pBuffer);
-                }
+                //}
             }
         }
     }
@@ -245,7 +246,7 @@ HRESULT CPreview::OnReadSample(
     // Request the next frame.
     if (SUCCEEDED(hr))
     {
-        hr = m_pReader->ReadSample(
+        hr = sourceReader->ReadSample(
             streamIndex,
             0,
             NULL,   // actual
@@ -306,7 +307,7 @@ HRESULT CPreview::TryMediaType(IMFMediaType* pType, DWORD streamIndex)
             if (FAILED(hr)) { break; }
 
             // Try to set this type on the source reader.
-            hr = m_pReader->SetCurrentMediaType(
+            hr = sourceReader->SetCurrentMediaType(
                 streamIndex,
                 NULL,
                 pType
@@ -341,8 +342,8 @@ HRESULT CPreview::SetDevice(IMFActivate* pActivate)
     HRESULT hr = S_OK;
 
     IMFMediaSource* mediaSource = NULL;
-    IMFAttributes* pAttributes = NULL;
-    IMFMediaType* pType = NULL;
+    IMFAttributes* readerInitializationAttributes = NULL;
+    IMFMediaType* nativeMediaType = NULL;
 
     EnterCriticalSection(&m_critsec);
 
@@ -388,19 +389,19 @@ HRESULT CPreview::SetDevice(IMFActivate* pActivate)
 
     // Create an attribute store to hold initialization settings.
 
-    CHECK_HR(hr = MFCreateAttributes(&pAttributes, 2));
-    CHECK_HR(hr = pAttributes->SetUINT32(MF_READWRITE_DISABLE_CONVERTERS, TRUE));
+    CHECK_HR(hr = MFCreateAttributes(&readerInitializationAttributes, 2));
+    CHECK_HR(hr = readerInitializationAttributes->SetUINT32(MF_READWRITE_DISABLE_CONVERTERS, TRUE));
 
     // Set the callback pointer.
-    CHECK_HR(hr = pAttributes->SetUnknown(
+    CHECK_HR(hr = readerInitializationAttributes->SetUnknown(
         MF_SOURCE_READER_ASYNC_CALLBACK,
         this
     ));
 
     CHECK_HR(hr = MFCreateSourceReaderFromMediaSource(
         mediaSource,
-        pAttributes,
-        &m_pReader
+        readerInitializationAttributes,
+        &sourceReader
     ));
 
     DWORD streamIndex = (DWORD) MF_SOURCE_READER_FIRST_VIDEO_STREAM;
@@ -408,32 +409,57 @@ HRESULT CPreview::SetDevice(IMFActivate* pActivate)
     // Try to find a suitable output type.
     if (SUCCEEDED(hr))
     {
+        IMFMediaType* maxMediaType = nullptr;
+        UINT32 maxWidth = 0;
+
         for (DWORD i = 0; ; i++)
         {
-            hr = m_pReader->GetNativeMediaType(
+            
+            hr = sourceReader->GetNativeMediaType(
                 streamIndex,
                 i,
-                &pType
+                &nativeMediaType
             );
 
             if (FAILED(hr)) { break; }
 
-            hr = TryMediaType(pType, streamIndex);
+            BOOL isCompressed;
+            nativeMediaType->IsCompressedFormat(&isCompressed);
 
-            SafeRelease(&pType);
+            GUID majorType;
+            nativeMediaType->GetMajorType(&majorType);
 
-            if (SUCCEEDED(hr))
-            {
-                // Found an output type.
-                break;
+            GUID subType;
+            nativeMediaType->GetGUID(MF_MT_SUBTYPE, &subType);
+
+            UINT32 width;
+            UINT32 height;
+            MFGetAttributeSize(nativeMediaType, MF_MT_FRAME_SIZE, &width, &height);
+
+            if (width > maxWidth && subType == MFVideoFormat_YUY2) {
+                maxMediaType = nativeMediaType;
+                maxMediaType->AddRef();
+                maxWidth = width;
             }
+
+            SafeRelease(&nativeMediaType);
         }
+
+        if (maxMediaType != nullptr) {
+            hr = TryMediaType(maxMediaType, streamIndex);
+        }
+        else {
+            hr = E_FAIL;
+        }
+
+        SafeRelease(&maxMediaType);
+        CHECK_HR(hr);
     }
 
     if (SUCCEEDED(hr))
     {
         // Ask for the first sample.
-        hr = m_pReader->ReadSample(
+        hr = sourceReader->ReadSample(
             streamIndex,
             0,
             NULL,
@@ -458,8 +484,8 @@ done:
 
     SafeRelease(&mediaSource);
     SafeRelease(&descriptor);
-    SafeRelease(&pAttributes);
-    SafeRelease(&pType);
+    SafeRelease(&readerInitializationAttributes);
+    SafeRelease(&nativeMediaType);
 
     LeaveCriticalSection(&m_critsec);
     return hr;

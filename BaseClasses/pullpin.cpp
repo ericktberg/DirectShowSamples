@@ -17,7 +17,7 @@
 
 
 CPullPin::CPullPin()
-  : m_pReader(NULL),
+  : sourceReader(NULL),
     m_pAlloc(NULL),
     m_State(TM_Exit)
 {
@@ -46,11 +46,11 @@ CPullPin::Connect(IUnknown* pUnk, IMemAllocator* pAlloc, BOOL bSync)
 {
     CAutoLock lock(&m_AccessLock);
 
-    if (m_pReader) {
+    if (sourceReader) {
 	return VFW_E_ALREADY_CONNECTED;
     }
 
-    HRESULT hr = pUnk->QueryInterface(IID_IAsyncReader, (void**)&m_pReader);
+    HRESULT hr = pUnk->QueryInterface(IID_IAsyncReader, (void**)&sourceReader);
     if (FAILED(hr)) {
 
 #ifdef DXMPERF
@@ -78,7 +78,7 @@ CPullPin::Connect(IUnknown* pUnk, IMemAllocator* pAlloc, BOOL bSync)
     }
 
     LONGLONG llTotal, llAvail;
-    hr = m_pReader->Length(&llTotal, &llAvail);
+    hr = sourceReader->Length(&llTotal, &llAvail);
     if (FAILED(hr)) {
 	Disconnect();
 
@@ -124,9 +124,9 @@ CPullPin::Disconnect()
 #endif // DXMPERF
 
 
-    if (m_pReader) {
-	m_pReader->Release();
-	m_pReader = NULL;
+    if (sourceReader) {
+	sourceReader->Release();
+	sourceReader = NULL;
     }
 
     if (m_pAlloc) {
@@ -158,7 +158,7 @@ CPullPin::DecideAllocator(
     } else {
 	pRequest = pProps;
     }
-    HRESULT hr = m_pReader->RequestAllocator(
+    HRESULT hr = sourceReader->RequestAllocator(
 		    pAlloc,
 		    pRequest,
 		    &m_pAlloc);
@@ -219,7 +219,7 @@ CPullPin::StartThread()
 {
     CAutoLock lock(&m_AccessLock);
 
-    if (!m_pAlloc || !m_pReader) {
+    if (!m_pAlloc || !sourceReader) {
 	return E_UNEXPECTED;
     }
 
@@ -254,7 +254,7 @@ CPullPin::PauseThread()
 
     // need to flush to ensure the thread is not blocked
     // in WaitForNext
-    HRESULT hr = m_pReader->BeginFlush();
+    HRESULT hr = sourceReader->BeginFlush();
     if (FAILED(hr)) {
 	return hr;
     }
@@ -262,7 +262,7 @@ CPullPin::PauseThread()
     m_State = TM_Pause;
     hr = CallWorker(TM_Pause);
 
-    m_pReader->EndFlush();
+    sourceReader->EndFlush();
     return hr;
 }
 
@@ -277,7 +277,7 @@ CPullPin::StopThread()
 
     // need to flush to ensure the thread is not blocked
     // in WaitForNext
-    HRESULT hr = m_pReader->BeginFlush();
+    HRESULT hr = sourceReader->BeginFlush();
     if (FAILED(hr)) {
 	return hr;
     }
@@ -285,7 +285,7 @@ CPullPin::StopThread()
     m_State = TM_Exit;
     hr = CallWorker(TM_Exit);
 
-    m_pReader->EndFlush();
+    sourceReader->EndFlush();
 
     // wait for thread to completely exit
     Close();
@@ -326,9 +326,9 @@ CPullPin::ThreadProc(void)
 	// !!!Note that we may currently be inside a BeginFlush/EndFlush pair
 	// on another thread, but the premature EndFlush will do no harm now
 	// that we are idle.
-	m_pReader->BeginFlush();
+	sourceReader->BeginFlush();
 	CleanupCancelled();
-	m_pReader->EndFlush();
+	sourceReader->EndFlush();
     }
 }
 
@@ -355,7 +355,7 @@ CPullPin::QueueSample(
 
     pSample->SetDiscontinuity(bDiscontinuity);
 
-    hr = m_pReader->Request(
+    hr = sourceReader->Request(
 			pSample,
 			0);
     if (FAILED(hr)) {
@@ -374,7 +374,7 @@ CPullPin::CollectAndDeliver(
 {
     IMediaSample* pSample = NULL;   // better be sure pSample is set
     DWORD_PTR dwUnused;
-    HRESULT hr = m_pReader->WaitForNext(
+    HRESULT hr = sourceReader->WaitForNext(
 			INFINITE,
 			&pSample,
 			&dwUnused);
@@ -544,7 +544,7 @@ CPullPin::Process(void)
 		bDiscontinuity = FALSE;
 	    }
 
-	    hr = m_pReader->SyncReadAligned(pSample);
+	    hr = sourceReader->SyncReadAligned(pSample);
 
 	    if (FAILED(hr)) {
 		pSample->Release();
@@ -574,7 +574,7 @@ CPullPin::CleanupCancelled(void)
 	IMediaSample * pSample;
 	DWORD_PTR dwUnused;
 
-	HRESULT hr = m_pReader->WaitForNext(
+	HRESULT hr = sourceReader->WaitForNext(
 			    0,          // no wait
 			    &pSample,
 			    &dwUnused);

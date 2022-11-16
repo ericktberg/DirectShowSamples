@@ -23,7 +23,7 @@
 
 class CPullPin : public CAMThread
 {
-    IAsyncReader*       m_pReader;
+    IAsyncReader*       sourceReader;
     REFERENCE_TIME      m_tStart;
     REFERENCE_TIME      m_tStop;
     REFERENCE_TIME      m_tDuration;
@@ -124,8 +124,8 @@ public:
     // GetReader returns the (addrefed) IAsyncReader interface
     // for SyncRead etc
     IAsyncReader* GetReader() {
-	m_pReader->AddRef();
-	return m_pReader;
+	sourceReader->AddRef();
+	return sourceReader;
     };
 
     // -- pure --

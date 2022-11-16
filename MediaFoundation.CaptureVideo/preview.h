@@ -71,7 +71,7 @@ protected:
     HWND                    m_hwndVideo;        // Video window.
     HWND                    m_hwndEvent;        // Application window to receive events. 
 
-    IMFSourceReader         *m_pReader;
+    IMFSourceReader         *sourceReader;
 
     DrawDevice              m_draw;             // Manages the Direct3D device.
 
