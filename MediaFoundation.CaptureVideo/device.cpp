@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////
 //
 // device.cpp: Manages the Direct3D device
-// 
+//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -14,49 +14,50 @@
 #include "MFCaptureD3D.h"
 #include "BufferLock.h"
 
+#include <wincodec.h>
+#include <wincodecsdk.h>
+
 const DWORD NUM_BACK_BUFFERS = 2;
 
 void TransformImage_RGB24(
-    BYTE*       pDest,
+    BYTE* pDest,
     LONG        lDestStride,
     const BYTE* pSrc,
     LONG        lSrcStride,
     DWORD       dwWidthInPixels,
     DWORD       dwHeightInPixels
-    );
+);
 
 void TransformImage_RGB32(
-    BYTE*       pDest,
+    BYTE* pDest,
     LONG        lDestStride,
     const BYTE* pSrc,
     LONG        lSrcStride,
     DWORD       dwWidthInPixels,
     DWORD       dwHeightInPixels
-    );
+);
 
 void TransformImage_YUY2(
-    BYTE*       pDest,
+    BYTE* pDest,
     LONG        lDestStride,
     const BYTE* pSrc,
     LONG        lSrcStride,
     DWORD       dwWidthInPixels,
     DWORD       dwHeightInPixels
-    );
+);
 
 void TransformImage_NV12(
-    BYTE* pDst, 
-    LONG dstStride, 
-    const BYTE* pSrc, 
+    BYTE* pDst,
+    LONG dstStride,
+    const BYTE* pSrc,
     LONG srcStride,
     DWORD dwWidthInPixels,
     DWORD dwHeightInPixels
-    );
-
+);
 
 RECT    LetterBoxRect(const RECT& rcSrc, const RECT& rcDst);
 RECT    CorrectAspectRatio(const RECT& src, const MFRatio& srcPAR);
-HRESULT GetDefaultStride(IMFMediaType *pType, LONG *plStride);
-
+HRESULT GetDefaultStride(IMFMediaType* pType, LONG* plStride);
 
 inline LONG Width(const RECT& r)
 {
@@ -68,7 +69,6 @@ inline LONG Height(const RECT& r)
     return r.bottom - r.top;
 }
 
-
 // Static table of output formats and conversion functions.
 struct ConversionFunction
 {
@@ -76,23 +76,21 @@ struct ConversionFunction
     IMAGE_TRANSFORM_FN xform;
 };
 
-
 ConversionFunction   g_FormatConversions[] =
 {
     { MFVideoFormat_RGB32, TransformImage_RGB32 },
     { MFVideoFormat_RGB24, TransformImage_RGB24 },
-    { MFVideoFormat_YUY2,  TransformImage_YUY2  },      
+    { MFVideoFormat_YUY2,  TransformImage_YUY2  },
     { MFVideoFormat_NV12,  TransformImage_NV12  }
 };
 
 const DWORD   g_cFormats = ARRAYSIZE(g_FormatConversions);
 
-
 //-------------------------------------------------------------------
 // Constructor
 //-------------------------------------------------------------------
 
-DrawDevice::DrawDevice() : 
+DrawDevice::DrawDevice() :
     m_hwnd(NULL),
     m_pD3D(NULL),
     m_pDevice(NULL),
@@ -104,11 +102,10 @@ DrawDevice::DrawDevice() :
     m_interlace(MFVideoInterlace_Unknown),
     m_convertFn(NULL)
 {
-    m_PixelAR.Denominator = m_PixelAR.Numerator = 1; 
+    m_PixelAR.Denominator = m_PixelAR.Numerator = 1;
 
     ZeroMemory(&m_d3dpp, sizeof(m_d3dpp));
 }
-
 
 //-------------------------------------------------------------------
 // Destructor
@@ -119,14 +116,13 @@ DrawDevice::~DrawDevice()
     DestroyDevice();
 }
 
-
 //-------------------------------------------------------------------
 // GetFormat
 //
 // Get a supported output format by index.
 //-------------------------------------------------------------------
 
-HRESULT DrawDevice::GetFormat(DWORD index, GUID *pSubtype) const
+HRESULT DrawDevice::GetFormat(DWORD index, GUID* pSubtype) const
 {
     if (index < g_cFormats)
     {
@@ -135,7 +131,6 @@ HRESULT DrawDevice::GetFormat(DWORD index, GUID *pSubtype) const
     }
     return MF_E_NO_MORE_TYPES;
 }
-
 
 //-------------------------------------------------------------------
 //  IsFormatSupported
@@ -154,9 +149,6 @@ BOOL DrawDevice::IsFormatSupported(REFGUID subtype) const
     }
     return FALSE;
 }
-
-
-
 
 //-------------------------------------------------------------------
 // CreateDevice
@@ -182,15 +174,14 @@ HRESULT DrawDevice::CreateDevice(HWND hwnd)
         }
     }
 
-
     HRESULT hr = S_OK;
     D3DPRESENT_PARAMETERS pp = { 0 };
     D3DDISPLAYMODE mode = { 0 };
 
     hr = m_pD3D->GetAdapterDisplayMode(
-        D3DADAPTER_DEFAULT, 
+        D3DADAPTER_DEFAULT,
         &mode
-        );
+    );
 
     if (FAILED(hr)) { goto done; }
 
@@ -200,13 +191,13 @@ HRESULT DrawDevice::CreateDevice(HWND hwnd)
         mode.Format,
         D3DFMT_X8R8G8B8,
         TRUE    // windowed
-        );
+    );
 
     if (FAILED(hr)) { goto done; }
 
     pp.BackBufferFormat = D3DFMT_X8R8G8B8;
     pp.SwapEffect = D3DSWAPEFFECT_COPY;
-    pp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;  
+    pp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
     pp.Windowed = TRUE;
     pp.hDeviceWindow = hwnd;
 
@@ -217,7 +208,7 @@ HRESULT DrawDevice::CreateDevice(HWND hwnd)
         D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE,
         &pp,
         &m_pDevice
-        );
+    );
 
     if (FAILED(hr)) { goto done; }
 
@@ -250,14 +241,13 @@ HRESULT DrawDevice::SetConversionFunction(REFGUID subtype)
     return MF_E_INVALIDMEDIATYPE;
 }
 
-
 //-------------------------------------------------------------------
 // SetVideoType
 //
-// Set the video format.  
+// Set the video format.
 //-------------------------------------------------------------------
 
-HRESULT DrawDevice::SetVideoType(IMFMediaType *pType)
+HRESULT DrawDevice::SetVideoType(IMFMediaType* pType)
 {
     HRESULT hr = S_OK;
     GUID subtype = { 0 };
@@ -271,8 +261,8 @@ HRESULT DrawDevice::SetVideoType(IMFMediaType *pType)
     // Choose a conversion function.
     // (This also validates the format type.)
 
-    hr = SetConversionFunction(subtype); 
-    
+    hr = SetConversionFunction(subtype);
+
     if (FAILED(hr)) { goto done; }
 
     //
@@ -281,16 +271,15 @@ HRESULT DrawDevice::SetVideoType(IMFMediaType *pType)
 
     // Get the frame size.
     hr = MFGetAttributeSize(pType, MF_MT_FRAME_SIZE, &m_width, &m_height);
-    
+
     if (FAILED(hr)) { goto done; }
 
-    
     // Get the interlace mode. Default: assume progressive.
-    m_interlace = (MFVideoInterlaceMode)MFGetAttributeUINT32(
+    m_interlace = (MFVideoInterlaceMode) MFGetAttributeUINT32(
         pType,
-        MF_MT_INTERLACE_MODE, 
+        MF_MT_INTERLACE_MODE,
         MFVideoInterlace_Progressive
-        );
+    );
 
     // Get the image stride.
     hr = GetDefaultStride(pType, &m_lDefaultStride);
@@ -299,11 +288,11 @@ HRESULT DrawDevice::SetVideoType(IMFMediaType *pType)
 
     // Get the pixel aspect ratio. Default: Assume square pixels (1:1)
     hr = MFGetAttributeRatio(
-        pType, 
-        MF_MT_PIXEL_ASPECT_RATIO, 
-        (UINT32*)&PAR.Numerator, 
-        (UINT32*)&PAR.Denominator
-        );
+        pType,
+        MF_MT_PIXEL_ASPECT_RATIO,
+        (UINT32*) &PAR.Numerator,
+        (UINT32*) &PAR.Denominator
+    );
 
     if (SUCCEEDED(hr))
     {
@@ -314,14 +303,13 @@ HRESULT DrawDevice::SetVideoType(IMFMediaType *pType)
         m_PixelAR.Numerator = m_PixelAR.Denominator = 1;
     }
 
-    m_format = (D3DFORMAT)subtype.Data1;
+    m_format = (D3DFORMAT) subtype.Data1;
 
     // Create Direct3D swap chains.
 
     hr = CreateSwapChains();
 
     if (FAILED(hr)) { goto done; }
-
 
     // Update the destination rectangle for the correct
     // aspect ratio.
@@ -341,7 +329,7 @@ done:
 //  UpdateDestinationRect
 //
 //  Update the destination rectangle for the current window size.
-//  The destination rectangle is letterboxed to preserve the 
+//  The destination rectangle is letterboxed to preserve the
 //  aspect ratio of the video image.
 //-------------------------------------------------------------------
 
@@ -357,12 +345,67 @@ void DrawDevice::UpdateDestinationRect()
     m_rcDest = LetterBoxRect(rcSrc, rcClient);
 }
 
-
 //-------------------------------------------------------------------
 // CreateSwapChains
 //
 // Create Direct3D swap chains.
 //-------------------------------------------------------------------
+
+HRESULT WriteBitmap(IWICImagingFactory* imagingFactory, IWICBitmapSource* bitmapSource, UINT width, UINT height, WICPixelFormatGUID pixelFormat) {
+    HRESULT hr;
+
+    IWICStream* destinationFileStream = NULL;
+    // Create a file stream.
+    hr = imagingFactory->CreateStream(&destinationFileStream);
+
+    CHECK_HR(hr);
+
+    hr = destinationFileStream->InitializeFromFilename(L"C:\\Users\\eberg\\Pictures\\Camera Roll\\test.png", GENERIC_WRITE);
+    CHECK_HR(hr);
+
+    IWICBitmapEncoder* bitmapEncoder = NULL;
+    hr = imagingFactory->CreateEncoder(GUID_ContainerFormatPng, NULL, &bitmapEncoder);
+    CHECK_HR(hr);
+
+    hr = bitmapEncoder->Initialize(destinationFileStream, WICBitmapEncoderNoCache);
+    CHECK_HR(hr);
+
+    IWICBitmapFrameEncode* frameEncode = NULL;
+    hr = bitmapEncoder->CreateNewFrame(&frameEncode, NULL);
+    CHECK_HR(hr);
+
+    hr = frameEncode->Initialize(NULL);
+    CHECK_HR(hr);
+
+    hr = frameEncode->SetSize(width, height);
+    CHECK_HR(hr);
+
+    /*hr = frameEncode->SetPixelFormat(&pixelFormat);
+    CHECK_HR(hr);*/
+    UNREFERENCED_PARAMETER(pixelFormat);
+
+    hr = frameEncode->WriteSource(
+        bitmapSource,
+        NULL);
+    CHECK_HR(hr);
+
+    hr = frameEncode->Commit();
+    CHECK_HR(hr);
+
+    hr = bitmapEncoder->Commit();
+    CHECK_HR(hr);
+
+    hr = destinationFileStream->Commit(STGC_DEFAULT);
+    CHECK_HR(hr);
+
+done:
+
+    SafeRelease(&destinationFileStream);
+    SafeRelease(&bitmapEncoder);
+    SafeRelease(&frameEncode);
+
+    return hr;
+}
 
 HRESULT DrawDevice::CreateSwapChains()
 {
@@ -372,13 +415,13 @@ HRESULT DrawDevice::CreateSwapChains()
 
     SafeRelease(&m_pSwapChain);
 
-    pp.BackBufferWidth  = m_width;
+    pp.BackBufferWidth = m_width;
     pp.BackBufferHeight = m_height;
     pp.Windowed = TRUE;
     pp.SwapEffect = D3DSWAPEFFECT_FLIP;
     pp.hDeviceWindow = m_hwnd;
     pp.BackBufferFormat = D3DFMT_X8R8G8B8;
-    pp.Flags = 
+    pp.Flags =
         D3DPRESENTFLAG_VIDEO | D3DPRESENTFLAG_DEVICECLIP |
         D3DPRESENTFLAG_LOCKABLE_BACKBUFFER;
     pp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
@@ -389,6 +432,65 @@ HRESULT DrawDevice::CreateSwapChains()
     return hr;
 }
 
+HRESULT DrawDevice::WriteFrameToFile(IMFMediaBuffer* mediaBuffer) {
+    // We can only write the media buffer (at least for now) if it supports the 2d buffer interface
+    HRESULT hr;
+
+    DWORD totalLength;
+    hr = mediaBuffer->GetCurrentLength(&totalLength);
+    if (FAILED(hr)) {
+        return hr;
+    }
+
+    IMF2DBuffer* buffer2d;
+    hr = mediaBuffer->QueryInterface(IID_IMF2DBuffer, (void**) &buffer2d);
+
+    if (FAILED(hr)) {
+        return hr;
+    }
+
+    BYTE* scanlineStart;  // The start of the first scanline.
+    LONG pitch;  // How many bytes per line. Essentially this is the width * stride
+    hr = buffer2d->Lock2D(&scanlineStart, &pitch);
+
+    IWICImagingFactory* imagingFactory;
+    hr = CoCreateInstance(
+        CLSID_WICImagingFactory,
+        NULL, CLSCTX_INPROC_SERVER,
+        IID_PPV_ARGS(&imagingFactory)
+    );
+    CHECK_HR(hr);
+
+    WICPixelFormatGUID pixelFormat = GUID_WICPixelFormat32bppRGBA;
+
+
+    IWICBitmap* bitmap;
+    hr = imagingFactory->CreateBitmapFromMemory(
+        m_width,
+        m_height,
+        pixelFormat,
+        (UINT) pitch,
+        (UINT) totalLength,
+        scanlineStart,
+        &bitmap
+    );
+    CHECK_HR(hr);
+
+    hr = WriteBitmap(imagingFactory,
+                     static_cast<IWICBitmapSource*> (bitmap),
+                     m_width,
+                     m_height,
+                     pixelFormat
+    );
+
+done:
+    hr = buffer2d->Unlock2D();
+
+    SafeRelease(&bitmap);
+    SafeRelease(&imagingFactory);
+    SafeRelease(&buffer2d);
+    return hr;
+}
 
 //-------------------------------------------------------------------
 // DrawFrame
@@ -396,7 +498,7 @@ HRESULT DrawDevice::CreateSwapChains()
 // Draw the video frame.
 //-------------------------------------------------------------------
 
-HRESULT DrawDevice::DrawFrame(IMFMediaBuffer *pBuffer)
+HRESULT DrawDevice::DrawFrame(IMFMediaBuffer* pBuffer)
 {
     if (m_convertFn == NULL)
     {
@@ -404,12 +506,12 @@ HRESULT DrawDevice::DrawFrame(IMFMediaBuffer *pBuffer)
     }
 
     HRESULT hr = S_OK;
-    BYTE *pbScanline0 = NULL;
+    BYTE* pbScanline0 = NULL;
     LONG lStride = 0;
     D3DLOCKED_RECT lr;
 
-    IDirect3DSurface9 *pSurf = NULL;
-    IDirect3DSurface9 *pBB = NULL;
+    IDirect3DSurface9* pSurf = NULL;
+    IDirect3DSurface9* pBB = NULL;
 
     if (m_pDevice == NULL || m_pSwapChain == NULL)
     {
@@ -435,26 +537,24 @@ HRESULT DrawDevice::DrawFrame(IMFMediaBuffer *pBuffer)
     if (FAILED(hr)) { goto done; }
 
     // Lock the swap-chain surface.
-    hr = pSurf->LockRect(&lr, NULL, D3DLOCK_NOSYSLOCK );
+    hr = pSurf->LockRect(&lr, NULL, D3DLOCK_NOSYSLOCK);
 
     if (FAILED(hr)) { goto done; }
 
-
     // Convert the frame. This also copies it to the Direct3D surface.
-    
+
     m_convertFn(
-        (BYTE*)lr.pBits,
+        (BYTE*) lr.pBits,
         lr.Pitch,
         pbScanline0,
         lStride,
         m_width,
         m_height
-        );
+    );
 
     hr = pSurf->UnlockRect();
 
     if (FAILED(hr)) { goto done; }
-
 
     // Color fill the back buffer.
     hr = m_pDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBB);
@@ -465,18 +565,15 @@ HRESULT DrawDevice::DrawFrame(IMFMediaBuffer *pBuffer)
 
     if (FAILED(hr)) { goto done; }
 
-
     // Blit the frame.
 
     hr = m_pDevice->StretchRect(pSurf, NULL, pBB, &m_rcDest, D3DTEXF_LINEAR);
-    
+
     if (FAILED(hr)) { goto done; }
 
-
     // Present the frame.
-    
+
     hr = m_pDevice->Present(NULL, NULL, NULL, NULL);
-    
 
 done:
     SafeRelease(&pBB);
@@ -504,24 +601,23 @@ HRESULT DrawDevice::TestCooperativeLevel()
 
     switch (hr)
     {
-    case D3D_OK:
-        break;
+        case D3D_OK:
+            break;
 
-    case D3DERR_DEVICELOST:
-        hr = S_OK;
+        case D3DERR_DEVICELOST:
+            hr = S_OK;
 
-    case D3DERR_DEVICENOTRESET:
-        hr = ResetDevice();
-        break;
+        case D3DERR_DEVICENOTRESET:
+            hr = ResetDevice();
+            break;
 
-    default:
-        // Some other failure.
-        break;
+        default:
+            // Some other failure.
+            break;
     }
 
     return hr;
 }
-
 
 //-------------------------------------------------------------------
 // ResetDevice
@@ -555,7 +651,7 @@ HRESULT DrawDevice::ResetDevice()
     if ((m_pSwapChain == NULL) && (m_format != D3DFMT_UNKNOWN))
     {
         hr = CreateSwapChains();
-        
+
         if (FAILED(hr)) { goto done; }
 
         UpdateDestinationRect();
@@ -563,12 +659,11 @@ HRESULT DrawDevice::ResetDevice()
 
 done:
 
-   return hr;
+    return hr;
 }
 
-
 //-------------------------------------------------------------------
-// DestroyDevice 
+// DestroyDevice
 //
 // Release all Direct3D resources.
 //-------------------------------------------------------------------
@@ -580,8 +675,6 @@ void DrawDevice::DestroyDevice()
     SafeRelease(&m_pD3D);
 }
 
-
-
 //-------------------------------------------------------------------
 //
 // Conversion functions
@@ -590,14 +683,14 @@ void DrawDevice::DestroyDevice()
 
 __forceinline BYTE Clip(int clr)
 {
-    return (BYTE)(clr < 0 ? 0 : ( clr > 255 ? 255 : clr ));
+    return (BYTE) (clr < 0 ? 0 : (clr > 255 ? 255 : clr));
 }
 
 __forceinline RGBQUAD ConvertYCrCbToRGB(
     int y,
     int cr,
     int cb
-    )
+)
 {
     RGBQUAD rgbq;
 
@@ -605,33 +698,32 @@ __forceinline RGBQUAD ConvertYCrCbToRGB(
     int d = cb - 128;
     int e = cr - 128;
 
-    rgbq.rgbRed =   Clip(( 298 * c           + 409 * e + 128) >> 8);
-    rgbq.rgbGreen = Clip(( 298 * c - 100 * d - 208 * e + 128) >> 8);
-    rgbq.rgbBlue =  Clip(( 298 * c + 516 * d           + 128) >> 8);
+    rgbq.rgbRed = Clip((298 * c + 409 * e + 128) >> 8);
+    rgbq.rgbGreen = Clip((298 * c - 100 * d - 208 * e + 128) >> 8);
+    rgbq.rgbBlue = Clip((298 * c + 516 * d + 128) >> 8);
 
     return rgbq;
 }
 
-
 //-------------------------------------------------------------------
-// TransformImage_RGB24 
+// TransformImage_RGB24
 //
 // RGB-24 to RGB-32
 //-------------------------------------------------------------------
 
 void TransformImage_RGB24(
-    BYTE*       pDest,
+    BYTE* pDest,
     LONG        lDestStride,
     const BYTE* pSrc,
     LONG        lSrcStride,
     DWORD       dwWidthInPixels,
     DWORD       dwHeightInPixels
-    )
+)
 {
     for (DWORD y = 0; y < dwHeightInPixels; y++)
     {
-        RGBTRIPLE *pSrcPel = (RGBTRIPLE*)pSrc;
-        DWORD *pDestPel = (DWORD*)pDest;
+        RGBTRIPLE* pSrcPel = (RGBTRIPLE*) pSrc;
+        DWORD* pDestPel = (DWORD*) pDest;
 
         for (DWORD x = 0; x < dwWidthInPixels; x++)
         {
@@ -639,7 +731,7 @@ void TransformImage_RGB24(
                 pSrcPel[x].rgbtRed,
                 pSrcPel[x].rgbtGreen,
                 pSrcPel[x].rgbtBlue
-                );
+            );
         }
 
         pSrc += lSrcStride;
@@ -650,74 +742,59 @@ void TransformImage_RGB24(
 //-------------------------------------------------------------------
 // TransformImage_RGB32
 //
-// RGB-32 to RGB-32 
+// RGB-32 to RGB-32
 //
 // Note: This function is needed to copy the image from system
 // memory to the Direct3D surface.
 //-------------------------------------------------------------------
 
 void TransformImage_RGB32(
-    BYTE*       pDest,
+    BYTE* pDest,
     LONG        lDestStride,
     const BYTE* pSrc,
     LONG        lSrcStride,
     DWORD       dwWidthInPixels,
     DWORD       dwHeightInPixels
-    )
+)
 {
     MFCopyImage(pDest, lDestStride, pSrc, lSrcStride, dwWidthInPixels * 4, dwHeightInPixels);
 }
 
 //-------------------------------------------------------------------
-// TransformImage_YUY2 
+// TransformImage_YUY2
 //
 // YUY2 to RGB-32
 //-------------------------------------------------------------------
 
 void TransformImage_YUY2(
-    BYTE*       pDest,
+    BYTE* pDest,
     LONG        lDestStride,
     const BYTE* pSrc,
     LONG        lSrcStride,
     DWORD       dwWidthInPixels,
     DWORD       dwHeightInPixels
-    )
+)
 {
     for (DWORD y = 0; y < dwHeightInPixels; y++)
     {
-        RGBQUAD *pDestPel = (RGBQUAD*)pDest;
-        WORD    *pSrcPel = (WORD*)pSrc;
+        RGBQUAD* pDestPel = (RGBQUAD*) pDest;
+        WORD* pSrcPel = (WORD*) pSrc;
 
         for (DWORD x = 0; x < dwWidthInPixels; x += 2)
         {
-            // Byte order is U0 Y0 V0 Y1
-           /* if (y >= 1619) {
-                 RGBQUAD black;
-                black.rgbRed = 0;
-                black.rgbBlue = 0;
-                black.rgbGreen = 0;
-                pDestPel[x] = black;
-                pDestPel[x + 1] = black;
-            }
-            else {*/
+            int y0 = (int) LOBYTE(pSrcPel[x]);
+            int u0 = (int) HIBYTE(pSrcPel[x]);
+            int y1 = (int) LOBYTE(pSrcPel[x + 1]);
+            int v0 = (int) HIBYTE(pSrcPel[x + 1]);
 
-                int y0 = (int) LOBYTE(pSrcPel[x]);
-                int u0 = (int) HIBYTE(pSrcPel[x]);
-                int y1 = (int) LOBYTE(pSrcPel[x + 1]);
-                int v0 = (int) HIBYTE(pSrcPel[x + 1]);
-
-                pDestPel[x] = ConvertYCrCbToRGB(y0, v0, u0);
-                pDestPel[x + 1] = ConvertYCrCbToRGB(y1, v0, u0);
-            //}
-
+            pDestPel[x] = ConvertYCrCbToRGB(y0, v0, u0);
+            pDestPel[x + 1] = ConvertYCrCbToRGB(y1, v0, u0);
         }
 
         pSrc += lSrcStride;
         pDest += lDestStride;
     }
-
 }
-
 
 //-------------------------------------------------------------------
 // TransformImage_NV12
@@ -726,16 +803,16 @@ void TransformImage_YUY2(
 //-------------------------------------------------------------------
 
 void TransformImage_NV12(
-    BYTE* pDst, 
-    LONG dstStride, 
-    const BYTE* pSrc, 
+    BYTE* pDst,
+    LONG dstStride,
+    const BYTE* pSrc,
     LONG srcStride,
     DWORD dwWidthInPixels,
     DWORD dwHeightInPixels
-    )
+)
 {
     const BYTE* lpBitsY = pSrc;
-    const BYTE* lpBitsCb = lpBitsY  + (dwHeightInPixels * srcStride);;
+    const BYTE* lpBitsCb = lpBitsY + (dwHeightInPixels * srcStride);;
     const BYTE* lpBitsCr = lpBitsCb + 1;
 
     for (UINT y = 0; y < dwHeightInPixels; y += 2)
@@ -750,12 +827,12 @@ void TransformImage_NV12(
 
         for (UINT x = 0; x < dwWidthInPixels; x += 2)
         {
-            int  y0 = (int)lpLineY1[0];
-            int  y1 = (int)lpLineY1[1];
-            int  y2 = (int)lpLineY2[0];
-            int  y3 = (int)lpLineY2[1];
-            int  cb = (int)lpLineCb[0];
-            int  cr = (int)lpLineCr[0];
+            int  y0 = (int) lpLineY1[0];
+            int  y1 = (int) lpLineY1[1];
+            int  y2 = (int) lpLineY2[0];
+            int  y3 = (int) lpLineY2[1];
+            int  cb = (int) lpLineCb[0];
+            int  cr = (int) lpLineCr[0];
 
             RGBQUAD r = ConvertYCrCbToRGB(y0, cr, cb);
             lpDibLine1[0] = r.rgbBlue;
@@ -791,21 +868,20 @@ void TransformImage_NV12(
         }
 
         pDst += (2 * dstStride);
-        lpBitsY   += (2 * srcStride);
-        lpBitsCr  += srcStride;
-        lpBitsCb  += srcStride;
+        lpBitsY += (2 * srcStride);
+        lpBitsCr += srcStride;
+        lpBitsCb += srcStride;
     }
 }
-
 
 //-------------------------------------------------------------------
 // LetterBoxDstRect
 //
-// Takes a src rectangle and constructs the largest possible 
-// destination rectangle within the specifed destination rectangle 
+// Takes a src rectangle and constructs the largest possible
+// destination rectangle within the specifed destination rectangle
 // such thatthe video maintains its current shape.
 //
-// This function assumes that pels are the same shape within both the 
+// This function assumes that pels are the same shape within both the
 // source and destination rectangles.
 //
 //-------------------------------------------------------------------
@@ -813,30 +889,27 @@ void TransformImage_NV12(
 RECT    LetterBoxRect(const RECT& rcSrc, const RECT& rcDst)
 {
     // figure out src/dest scale ratios
-    int iSrcWidth  = Width(rcSrc);
+    int iSrcWidth = Width(rcSrc);
     int iSrcHeight = Height(rcSrc);
 
-    int iDstWidth  = Width(rcDst);
+    int iDstWidth = Width(rcDst);
     int iDstHeight = Height(rcDst);
 
     int iDstLBWidth;
     int iDstLBHeight;
 
     if (MulDiv(iSrcWidth, iDstHeight, iSrcHeight) <= iDstWidth) {
-
         // Column letter boxing ("pillar box")
 
-        iDstLBWidth  = MulDiv(iDstHeight, iSrcWidth, iSrcHeight);
+        iDstLBWidth = MulDiv(iDstHeight, iSrcWidth, iSrcHeight);
         iDstLBHeight = iDstHeight;
     }
     else {
-
         // Row letter boxing.
 
-        iDstLBWidth  = iDstWidth;
+        iDstLBWidth = iDstWidth;
         iDstLBHeight = MulDiv(iDstWidth, iSrcHeight, iSrcWidth);
     }
-
 
     // Create a centered rectangle within the current destination rect
 
@@ -850,21 +923,20 @@ RECT    LetterBoxRect(const RECT& rcSrc, const RECT& rcDst)
     return rc;
 }
 
-
 //-----------------------------------------------------------------------------
 // CorrectAspectRatio
 //
 // Converts a rectangle from the source's pixel aspect ratio (PAR) to 1:1 PAR.
 // Returns the corrected rectangle.
 //
-// For example, a 720 x 486 rect with a PAR of 9:10, when converted to 1x1 PAR,  
-// is stretched to 720 x 540. 
+// For example, a 720 x 486 rect with a PAR of 9:10, when converted to 1x1 PAR,
+// is stretched to 720 x 540.
 //-----------------------------------------------------------------------------
 
 RECT CorrectAspectRatio(const RECT& src, const MFRatio& srcPAR)
 {
     // Start with a rectangle the same size as src, but offset to the origin (0,0).
-    RECT rc = {0, 0, src.right - src.left, src.bottom - src.top};
+    RECT rc = { 0, 0, src.right - src.left, src.bottom - src.top };
 
     if ((srcPAR.Numerator != 1) || (srcPAR.Denominator != 1))
     {
@@ -885,7 +957,6 @@ RECT CorrectAspectRatio(const RECT& src, const MFRatio& srcPAR)
     return rc;
 }
 
-
 //-----------------------------------------------------------------------------
 // GetDefaultStride
 //
@@ -893,12 +964,12 @@ RECT CorrectAspectRatio(const RECT& src, const MFRatio& srcPAR)
 //
 //-----------------------------------------------------------------------------
 
-HRESULT GetDefaultStride(IMFMediaType *pType, LONG *plStride)
+HRESULT GetDefaultStride(IMFMediaType* pType, LONG* plStride)
 {
     LONG lStride = 0;
 
     // Try to get the default stride from the media type.
-    HRESULT hr = pType->GetUINT32(MF_MT_DEFAULT_STRIDE, (UINT32*)&lStride);
+    HRESULT hr = pType->GetUINT32(MF_MT_DEFAULT_STRIDE, (UINT32*) &lStride);
     if (FAILED(hr))
     {
         // Attribute not set. Try to calculate the default stride.
@@ -921,7 +992,7 @@ HRESULT GetDefaultStride(IMFMediaType *pType, LONG *plStride)
         // Set the attribute for later reference.
         if (SUCCEEDED(hr))
         {
-            (void)pType->SetUINT32(MF_MT_DEFAULT_STRIDE, UINT32(lStride));
+            (void) pType->SetUINT32(MF_MT_DEFAULT_STRIDE, UINT32(lStride));
         }
     }
 

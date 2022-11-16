@@ -14,6 +14,8 @@
 
 #pragma once
 
+#define CHECK_HR(x) if (FAILED(x)) { goto done; }
+
 // Function pointer for the function that transforms the image.
 
 typedef void (*IMAGE_TRANSFORM_FN)(
@@ -70,6 +72,7 @@ public:
 
     HRESULT SetVideoType(IMFMediaType *pType);
     HRESULT DrawFrame(IMFMediaBuffer *pBuffer);
+    HRESULT WriteFrameToFile(IMFMediaBuffer *pBuffer);
 
     // What video formats we accept
     BOOL     IsFormatSupported(REFGUID subtype) const;
