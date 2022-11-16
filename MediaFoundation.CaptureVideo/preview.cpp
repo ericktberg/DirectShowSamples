@@ -235,7 +235,7 @@ HRESULT CPreview::OnReadSample(
                     // hr = WriteMediaBufferToFile(pBuffer);
                 //}
                 //else {
-                    hr = m_draw.DrawFrame(pBuffer);
+                hr = m_draw.DrawFrame(pBuffer);
                 //}
             }
         }
@@ -289,6 +289,11 @@ HRESULT CPreview::TryMediaType(IMFMediaType* pType, DWORD streamIndex)
     // Do we support this type directly?
     if (m_draw.IsFormatSupported(subtype))
     {
+        hr = sourceReader->SetCurrentMediaType(
+            streamIndex,
+            NULL,
+            pType
+        );
         bFound = TRUE;
     }
     else
@@ -414,7 +419,6 @@ HRESULT CPreview::SetDevice(IMFActivate* pActivate)
 
         for (DWORD i = 0; ; i++)
         {
-            
             hr = sourceReader->GetNativeMediaType(
                 streamIndex,
                 i,

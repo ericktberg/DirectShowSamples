@@ -3,6 +3,8 @@
 #include <wincodec.h>
 #include <wincodecsdk.h>
 
+
+
 int EncodeImage()
 {
     // Initialize COM.

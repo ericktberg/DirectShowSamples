@@ -691,14 +691,25 @@ void TransformImage_YUY2(
         for (DWORD x = 0; x < dwWidthInPixels; x += 2)
         {
             // Byte order is U0 Y0 V0 Y1
+           /* if (y >= 1619) {
+                 RGBQUAD black;
+                black.rgbRed = 0;
+                black.rgbBlue = 0;
+                black.rgbGreen = 0;
+                pDestPel[x] = black;
+                pDestPel[x + 1] = black;
+            }
+            else {*/
 
-            int y0 = (int)LOBYTE(pSrcPel[x]); 
-            int u0 = (int)HIBYTE(pSrcPel[x]);
-            int y1 = (int)LOBYTE(pSrcPel[x + 1]);
-            int v0 = (int)HIBYTE(pSrcPel[x + 1]);
+                int y0 = (int) LOBYTE(pSrcPel[x]);
+                int u0 = (int) HIBYTE(pSrcPel[x]);
+                int y1 = (int) LOBYTE(pSrcPel[x + 1]);
+                int v0 = (int) HIBYTE(pSrcPel[x + 1]);
 
-            pDestPel[x] = ConvertYCrCbToRGB(y0, v0, u0);
-            pDestPel[x + 1] = ConvertYCrCbToRGB(y1, v0, u0);
+                pDestPel[x] = ConvertYCrCbToRGB(y0, v0, u0);
+                pDestPel[x + 1] = ConvertYCrCbToRGB(y1, v0, u0);
+            //}
+
         }
 
         pSrc += lSrcStride;
