@@ -461,17 +461,27 @@ HRESULT DrawDevice::WriteFrameToFile(IMFMediaBuffer* mediaBuffer) {
     );
     CHECK_HR(hr);
 
-    WICPixelFormatGUID pixelFormat = GUID_WICPixelFormat32bppRGBA;
+    WICPixelFormatGUID pixelFormat = GUID_WICPixelFormat32bppBGR;
+    
 
+    BYTE* rgbBits = new BYTE[m_width * m_height * 4];
+    m_convertFn(
+        rgbBits,
+        m_width * 4,
+        scanlineStart,
+        pitch,
+        m_width,
+        m_height
+    );
 
     IWICBitmap* bitmap;
     hr = imagingFactory->CreateBitmapFromMemory(
         m_width,
         m_height,
         pixelFormat,
-        (UINT) pitch,
-        (UINT) totalLength,
-        scanlineStart,
+        (UINT) m_width * 4,
+        (UINT) m_width * m_height * 4,
+        rgbBits,
         &bitmap
     );
     CHECK_HR(hr);

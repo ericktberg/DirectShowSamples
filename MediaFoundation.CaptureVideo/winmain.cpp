@@ -136,9 +136,7 @@ BOOL InitializeApplication()
     HRESULT hr = S_OK;
 
     hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-
-    EncodeImage();
-    
+        
     if (SUCCEEDED(hr))
     {
         hr = MFStartup(MF_VERSION);
