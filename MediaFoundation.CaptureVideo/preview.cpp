@@ -166,9 +166,38 @@ HRESULT CPreview::QueryInterface(REFIID riid, void** ppv)
 // Called when the IMFMediaSource::ReadSample method completes.
 //-------------------------------------------------------------------
 
-
 int readFrame = 10;
 int framesRead = 0;
+
+HRESULT writeMediaBufferToFile(IMFMediaBuffer* mediaBuffer) {
+    // We can only write the media buffer (at least for now) if it supports the 2d buffer interface
+    HRESULT hr;
+
+    DWORD totalLength;
+    hr = mediaBuffer->GetCurrentLength(&totalLength);
+    if (FAILED(hr)) {
+        return hr;
+    }
+
+    IMF2DBuffer* buffer2d;
+    hr = mediaBuffer->QueryInterface(IID_IMF2DBuffer, (void**) &buffer2d);
+
+    if (FAILED(hr)) {
+        return hr;
+    }
+
+    BYTE* scanlineStart;  // The start of the first scanline.
+    LONG pitch;  // How many bytes per line. Essentially this is the width * stride
+    hr = buffer2d->Lock2D(&scanlineStart, &pitch);
+
+    if (FAILED(hr)) {
+        buffer2d->Release();
+        return hr;
+    }
+
+    hr = buffer2d->Unlock2D();
+    return hr;
+}
 
 HRESULT CPreview::OnReadSample(
     HRESULT hrStatus,
@@ -184,7 +213,6 @@ HRESULT CPreview::OnReadSample(
 
     HRESULT hr = S_OK;
     IMFMediaBuffer* pBuffer = NULL;
-    
 
     EnterCriticalSection(&m_critsec);
 
@@ -200,16 +228,14 @@ HRESULT CPreview::OnReadSample(
             // Get the video frame buffer from the sample.
 
             hr = pSample->GetBufferByIndex(0, &pBuffer);
-
-            if (framesRead++ == readFrame) {
-                
-            }
-
-            // Draw the frame.
-
             if (SUCCEEDED(hr))
             {
-                hr = m_draw.DrawFrame(pBuffer);
+                if (framesRead++ == readFrame) {
+                    hr = writeMediaBufferToFile(pBuffer);
+                }
+                else {
+                    hr = m_draw.DrawFrame(pBuffer);
+                }
             }
         }
     }
